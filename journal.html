@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Journal - YeyoJournal</title>
+    <title>Task Tracker - YeyoJournal</title>
     <link rel="stylesheet" href="css/style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <nav class="navbar">
         <div class="container nav-content">
-            <h2>YeyoJournal</h2>
+            <h2>YeyoJournal Task Tracker</h2>
             <div class="nav-links">
                 <span>Welcome, <span id="userWelcome"></span>!</span>
                 <button id="logoutBtn">Logout</button>
@@ -19,81 +19,128 @@
     </nav>
 
     <div class="container">
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-number" id="totalEntries">0</div>
-                <div class="stat-label">Total Entries</div>
+        <!-- Date Navigation -->
+        <div class="date-navigation">
+            <button onclick="changeWeek(-1)">← Previous Week</button>
+            <div class="date-display">
+                <div class="current-date" id="currentWeekRange"></div>
+                <div class="shamsi-date" id="shamsiWeekRange"></div>
             </div>
-            <div class="stat-card">
-                <div class="stat-number" id="completedEntries">0</div>
-                <div class="stat-label">Completed</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number" id="todayEntries">0</div>
-                <div class="stat-label">Today</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number" id="completionRate">0%</div>
-                <div class="stat-label">Completion Rate</div>
+            <div class="nav-buttons">
+                <button onclick="goToToday()">Today</button>
+                <button onclick="changeWeek(1)">Next Week →</button>
             </div>
         </div>
 
         <div class="journal-container">
             <div class="main-content">
+                <!-- Task Form -->
                 <div class="entry-form">
-                    <h3>New Journal Entry</h3>
-                    <form id="entryForm">
-                        <div class="form-group">
-                            <label for="entryTitle">Title:</label>
-                            <input type="text" id="entryTitle" required placeholder="What's on your mind?">
-                        </div>
-                        <div class="form-group">
-                            <label for="entryContent">Content:</label>
-                            <textarea id="entryContent" rows="4" required placeholder="Write your thoughts here..."></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label>How are you feeling?</label>
-                            <div class="mood-selector">
-                                <div class="mood-option selected" data-mood="happy">😊 Happy</div>
-                                <div class="mood-option" data-mood="sad">😔 Sad</div>
-                                <div class="mood-option" data-mood="excited">😄 Excited</div>
-                                <div class="mood-option" data-mood="tired">😴 Tired</div>
-                                <div class="mood-option" data-mood="neutral">😐 Neutral</div>
-                                <div class="mood-option" data-mood="productive">💪 Productive</div>
+                    <h3>Add New Task</h3>
+                    <form id="taskForm">
+                        <div class="task-form-grid">
+                            <div class="form-group">
+                                <label for="taskName">Task Name:</label>
+                                <input type="text" id="taskName" required placeholder="Enter task name">
+                            </div>
+                            <div class="form-group">
+                                <label for="taskCategory">Category:</label>
+                                <select id="taskCategory" required>
+                                    <option value="work">Work</option>
+                                    <option value="personal">Personal</option>
+                                    <option value="health">Health</option>
+                                    <option value="learning">Learning</option>
+                                    <option value="other">Other</option>
+                                </select>
                             </div>
                         </div>
                         <div class="form-group">
-                            <label for="entryPriority">Priority:</label>
-                            <select id="entryPriority" required>
-                                <option value="low">Low</option>
-                                <option value="medium" selected>Medium</option>
-                                <option value="high">High</option>
-                            </select>
+                            <label for="taskDescription">Description:</label>
+                            <textarea id="taskDescription" rows="3" placeholder="Task description (optional)"></textarea>
                         </div>
-                        <div class="form-group">
-                            <label for="entryCategory">Category:</label>
-                            <select id="entryCategory" required>
-                                <option value="personal">Personal</option>
-                                <option value="work">Work</option>
-                                <option value="health">Health</option>
-                                <option value="ideas">Ideas</option>
-                                <option value="goals">Goals</option>
-                            </select>
-                        </div>
-                        <button type="submit">Add to Journal</button>
+                        <button type="submit">Add Task</button>
                     </form>
                 </div>
 
-                <div class="entry-list">
-                    <h3>Journal Entries</h3>
-                    <div id="entryList"></div>
+                <!-- Weekly View -->
+                <div class="weekly-view">
+                    <h3>Weekly Task Tracking (Saturday - Friday)</h3>
+                    <div class="week-days" id="weekDaysHeader"></div>
+                    <div class="task-grid" id="taskGrid">
+                        <!-- Filled by JavaScript -->
+                    </div>
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="legend-color heatmap-1"></div>
+                            <span>1-2 hours</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color heatmap-2"></div>
+                            <span>3-4 hours</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color heatmap-3"></div>
+                            <span>5-6 hours</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color heatmap-4"></div>
+                            <span>7-8 hours</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color heatmap-5"></div>
+                            <span>8+ hours</span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <div class="sidebar">
-                <div class="chart-container">
-                    <canvas id="entriesChart"></canvas>
+                <!-- Stats -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalTasks">0</div>
+                        <div class="stat-label">Total Tasks</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="weekHours">0</div>
+                        <div class="stat-label">This Week Hours</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="todayHours">0</div>
+                        <div class="stat-label">Today Hours</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="productivityScore">0%</div>
+                        <div class="stat-label">Productivity</div>
+                    </div>
                 </div>
+
+                <!-- Charts -->
+                <div class="charts-container">
+                    <div class="chart-panel">
+                        <h3>30-Day Task Hours</h3>
+                        <canvas id="taskHistoryChart"></canvas>
+                    </div>
+                    <div class="chart-panel">
+                        <h3>30-Day Productivity</h3>
+                        <canvas id="productivityChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hour Input Modal -->
+    <div class="modal" id="hourModal">
+        <div class="modal-content">
+            <h3>Log Hours for <span id="modalTaskName"></span></h3>
+            <div class="form-group">
+                <label for="hoursInput">Hours spent:</label>
+                <input type="number" id="hoursInput" min="0" max="24" step="0.5" value="0">
+            </div>
+            <div class="modal-actions">
+                <button onclick="closeModal()">Cancel</button>
+                <button onclick="saveHours()">Save Hours</button>
             </div>
         </div>
     </div>
