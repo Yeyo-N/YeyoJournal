@@ -5,12 +5,11 @@ let currentDate = null;
 
 // Shamsi (Jalali) date conversion functions
 function toShamsi(date) {
-    // Simple conversion - for accurate conversion, you might want to use a library
     const gregorianYear = date.getFullYear();
     const gregorianMonth = date.getMonth() + 1;
     const gregorianDay = date.getDate();
     
-    // Approximate conversion (this is simplified)
+    // Simple conversion (for accurate conversion, consider using a library like jalaali-js)
     let shamsiYear = gregorianYear - 621;
     let shamsiMonth = gregorianMonth - 3;
     let shamsiDay = gregorianDay - 21;
@@ -29,6 +28,11 @@ function toShamsi(date) {
         }
     }
     
+    // Adjust for month lengths (simplified)
+    if (shamsiMonth === 12 && shamsiDay > 29) {
+        shamsiDay = 29;
+    }
+    
     return {
         year: shamsiYear,
         month: shamsiMonth,
@@ -42,9 +46,21 @@ function toShamsi(date) {
 function getWeekStartDate(date) {
     // Week starts on Saturday (0=Sunday, 6=Saturday in JavaScript)
     const day = date.getDay();
-    const diff = date.getDate() - day + (day === 6 ? 0 : -6);
-    if (day === 6) diff = date.getDate(); // If it's Saturday, start from today
-    return new Date(date.setDate(diff));
+    let diff = date.getDate() - day;
+    
+    // Adjust to make Saturday the first day of week
+    if (day === 6) {
+        // It's Saturday, start from today
+        diff = date.getDate();
+    } else {
+        // Go back to previous Saturday
+        diff = date.getDate() - day - 1;
+    }
+    
+    const weekStart = new Date(date);
+    weekStart.setDate(diff);
+    weekStart.setHours(0, 0, 0, 0);
+    return weekStart;
 }
 
 function formatDate(date) {
@@ -185,7 +201,7 @@ function loadTasks() {
                 log.taskId === task.id && log.date === dateStr
             );
             const hours = log ? log.hours : 0;
-            const heatmapClass = hours > 0 ? `heatmap-${Math.min(Math.ceil(hours / 2), 5)}` : '';
+            const heatmapClass = hours > 0 ? `heatmap-${Math.min(Math.ceil(hours / 2), 5)} filled` : '';
             
             gridHTML += `
                 <div class="task-hours-cell ${heatmapClass}" 
@@ -195,6 +211,13 @@ function loadTasks() {
             `;
         });
     });
+    
+    // Add empty row if no tasks
+    if (tasks.length === 0) {
+        gridHTML += `<div class="task-row-header" style="grid-column: 1 / -1; text-align: center; color: #b0b0b0;">
+            No tasks yet. Add your first task above!
+        </div>`;
+    }
     
     document.getElementById('taskGrid').innerHTML = gridHTML;
     updateStats();
@@ -237,7 +260,8 @@ function saveHours() {
                 id: Date.now(),
                 taskId: currentTaskId,
                 date: currentDate,
-                hours: hours
+                hours: hours,
+                loggedAt: new Date().toISOString()
             });
         }
         
@@ -250,19 +274,21 @@ function saveHours() {
 }
 
 function deleteTask(taskId) {
-    const user = JSON.parse(localStorage.getItem('currentUser'));
-    let tasks = JSON.parse(localStorage.getItem(`tasks_${user.username}`) || '[]');
-    let taskLogs = JSON.parse(localStorage.getItem(`taskLogs_${user.username}`) || '[]');
-    
-    tasks = tasks.filter(task => task.id !== taskId);
-    taskLogs = taskLogs.filter(log => log.taskId !== taskId);
-    
-    localStorage.setItem(`tasks_${user.username}`, JSON.stringify(tasks));
-    localStorage.setItem(`taskLogs_${user.username}`, JSON.stringify(taskLogs));
-    
-    loadTasks();
-    updateCharts();
-    updateStats();
+    if (confirm('Are you sure you want to delete this task? This will also delete all logged hours for this task.')) {
+        const user = JSON.parse(localStorage.getItem('currentUser'));
+        let tasks = JSON.parse(localStorage.getItem(`tasks_${user.username}`) || '[]');
+        let taskLogs = JSON.parse(localStorage.getItem(`taskLogs_${user.username}`) || '[]');
+        
+        tasks = tasks.filter(task => task.id !== taskId);
+        taskLogs = taskLogs.filter(log => log.taskId !== taskId);
+        
+        localStorage.setItem(`tasks_${user.username}`, JSON.stringify(tasks));
+        localStorage.setItem(`taskLogs_${user.username}`, JSON.stringify(taskLogs));
+        
+        loadTasks();
+        updateCharts();
+        updateStats();
+    }
 }
 
 function changeWeek(weeks) {
@@ -299,4 +325,12 @@ function updateStats() {
     document.getElementById('todayHours').textContent = todayHours.toFixed(1);
     document.getElementById('weekHours').textContent = weekHours.toFixed(1);
     document.getElementById('productivityScore').textContent = productivityScore + '%';
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('hourModal');
+    if (event.target === modal) {
+        closeModal();
+    }
 }

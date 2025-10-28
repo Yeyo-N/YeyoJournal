@@ -25,7 +25,7 @@ function updateTaskHistoryChart() {
         taskLogs
             .filter(log => log.taskId === task.id && dates.includes(log.date))
             .forEach(log => {
-                hoursByDate[log.date] = log.hours;
+                hoursByDate[log.date] = (hoursByDate[log.date] || 0) + log.hours;
             });
         
         const data = dates.map(date => hoursByDate[date] || 0);
@@ -34,9 +34,10 @@ function updateTaskHistoryChart() {
             label: task.name,
             data: data,
             borderColor: getRandomColor(),
-            backgroundColor: 'rgba(100, 255, 218, 0.1)',
+            backgroundColor: getRandomColor(0.1),
             tension: 0.4,
-            fill: true
+            fill: false,
+            borderWidth: 2
         };
     });
     
@@ -62,7 +63,18 @@ function updateTaskHistoryChart() {
                 legend: {
                     position: 'top',
                     labels: {
-                        color: '#e0e0e0'
+                        color: '#e0e0e0',
+                        font: {
+                            size: 11
+                        }
+                    }
+                },
+                title: {
+                    display: true,
+                    text: 'Task Hours Over Last 30 Days',
+                    color: '#e0e0e0',
+                    font: {
+                        size: 14
                     }
                 }
             },
@@ -72,7 +84,8 @@ function updateTaskHistoryChart() {
                         color: 'rgba(255, 255, 255, 0.1)'
                     },
                     ticks: {
-                        color: '#b0b0b0'
+                        color: '#b0b0b0',
+                        maxTicksLimit: 10
                     }
                 },
                 y: {
@@ -86,7 +99,8 @@ function updateTaskHistoryChart() {
                         display: true,
                         text: 'Hours',
                         color: '#b0b0b0'
-                    }
+                    },
+                    beginAtZero: true
                 }
             }
         }
@@ -147,6 +161,14 @@ function updateProductivityChart() {
             plugins: {
                 legend: {
                     display: false
+                },
+                title: {
+                    display: true,
+                    text: 'Daily Productivity Hours',
+                    color: '#e0e0e0',
+                    font: {
+                        size: 14
+                    }
                 }
             },
             scales: {
@@ -170,18 +192,28 @@ function updateProductivityChart() {
                         display: true,
                         text: 'Hours',
                         color: '#b0b0b0'
-                    }
+                    },
+                    beginAtZero: true
                 }
             }
         }
     });
 }
 
-function getRandomColor() {
+function getRandomColor(alpha = 1) {
     const colors = [
-        '#64ffda', '#00bcd4', '#2196f3', '#3f51b5', 
-        '#673ab7', '#9c27b0', '#e91e63', '#f44336',
-        '#ff9800', '#ffeb3b', '#8bc34a', '#4caf50'
+        `rgba(100, 255, 218, ${alpha})`,
+        `rgba(0, 188, 212, ${alpha})`,
+        `rgba(33, 150, 243, ${alpha})`,
+        `rgba(63, 81, 181, ${alpha})`,
+        `rgba(103, 58, 183, ${alpha})`,
+        `rgba(156, 39, 176, ${alpha})`,
+        `rgba(233, 30, 99, ${alpha})`,
+        `rgba(244, 67, 54, ${alpha})`,
+        `rgba(255, 152, 0, ${alpha})`,
+        `rgba(255, 235, 59, ${alpha})`,
+        `rgba(139, 195, 74, ${alpha})`,
+        `rgba(76, 175, 80, ${alpha})`
     ];
     return colors[Math.floor(Math.random() * colors.length)];
 }
