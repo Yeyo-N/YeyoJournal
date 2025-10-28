@@ -1,11 +1,14 @@
 // Simple encryption function
 function simpleEncrypt(text) {
-    return btoa(text).split('').reverse().join('');
+    return btoa(encodeURIComponent(text)).split('').reverse().join('');
 }
 
 function simpleDecrypt(text) {
-    return atob(text.split('').reverse().join(''));
+    return decodeURIComponent(atob(text.split('').reverse().join('')));
 }
+
+// Cache for user data
+const userCache = new Map();
 
 // Initialize users in localStorage if not exists
 function initializeUsers() {
@@ -45,7 +48,32 @@ function checkAuth() {
 function requireAuth() {
     if (!checkAuth()) {
         window.location.href = 'login.html';
+        return false;
     }
+    return true;
+}
+
+// Optimized user data getter
+function getUserData(key) {
+    const user = JSON.parse(localStorage.getItem('currentUser'));
+    const cacheKey = `${user.username}_${key}`;
+    
+    if (userCache.has(cacheKey)) {
+        return userCache.get(cacheKey);
+    }
+    
+    const data = JSON.parse(localStorage.getItem(`${key}_${user.username}`) || '[]');
+    userCache.set(cacheKey, data);
+    return data;
+}
+
+// Optimized user data setter
+function setUserData(key, data) {
+    const user = JSON.parse(localStorage.getItem('currentUser'));
+    const cacheKey = `${user.username}_${key}`;
+    
+    localStorage.setItem(`${key}_${user.username}`, JSON.stringify(data));
+    userCache.set(cacheKey, data);
 }
 
 // Login function
@@ -66,6 +94,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (user && simpleDecrypt(user.password) === password) {
                 localStorage.setItem('currentUser', JSON.stringify(user));
                 initializeTaskData(user.username);
+                userCache.clear(); // Clear cache on login
                 
                 if (user.role === 'admin') {
                     window.location.href = 'admin.html';
@@ -73,7 +102,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     window.location.href = 'journal.html';
                 }
             } else {
-                document.getElementById('error-message').textContent = 'Invalid username or password';
+                const errorEl = document.getElementById('error-message');
+                if (errorEl) {
+                    errorEl.textContent = 'Invalid username or password';
+                }
             }
         });
     }
@@ -83,6 +115,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (logoutBtn) {
         logoutBtn.addEventListener('click', function() {
             localStorage.removeItem('currentUser');
+            userCache.clear();
             window.location.href = 'index.html';
         });
     }
